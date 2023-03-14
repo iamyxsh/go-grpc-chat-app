@@ -1,0 +1,146 @@
+version: "3.8"
+services:
+  auth:
+    build:
+      context: ./backend/services/auth
+      dockerfile: Dockerfile
+    container_name: auth
+    environment:
+      - PORT=5001
+    ports:
+      - "5001:5001"
+    depends_on:
+      - auth-db
+      - kafka
+    volumes:
+      - ./backend/services/auth:/go/src/github.com/iamyxsh/go-grpc-chat-app/backend/services/auth
+      - ./backend/packages/kafka:/go/src/github.com/iamyxsh/go-grpc-chat-app/backend/packages/kafka
+      - ./backend/packages/db:/go/src/github.com/iamyxsh/go-grpc-chat-app/backend/packages/db
+      - ./backend/packages/models:/go/src/github.com/iamyxsh/go-grpc-chat-app/backend/packages/models
+      - ./backend/packages/logger:/go/src/github.com/iamyxsh/go-grpc-chat-app/backend/packages/logger
+      - ./backend/packages/utils:/go/src/github.com/iamyxsh/go-grpc-chat-app/backend/packages/utils
+  auth-db:
+    image: postgres:14.1-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    container_name: auth-db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./volumes/auth-db:/var/lib/postgresql/data
+
+  user:
+    build:
+      context: ./backend/services/user
+      dockerfile: Dockerfile
+    container_name: user
+    environment:
+      - PORT=5002
+    ports:
+      - "5002:5002"
+    depends_on:
+      - user-db
+      - kafka
+    volumes:
+      - ./backend/services/user:/go/src/github.com/iamyxsh/go-grpc-chat-app/backend/services/user
+      - ./backend/packages/kafka:/go/src/github.com/iamyxsh/go-grpc-chat-app/backend/packages/kafka
+      - ./backend/packages/db:/go/src/github.com/iamyxsh/go-grpc-chat-app/backend/packages/db
+      - ./backend/packages/models:/go/src/github.com/iamyxsh/go-grpc-chat-app/backend/packages/models
+      - ./backend/packages/logger:/go/src/github.com/iamyxsh/go-grpc-chat-app/backend/packages/logger
+      - ./backend/packages/utils:/go/src/github.com/iamyxsh/go-grpc-chat-app/backend/packages/utils
+  user-db:
+    restart: always
+    image: postgres:14.1-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    container_name: user-db
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./volumes/user-db:/var/lib/postgresql/data
+
+  friends:
+    build:
+      context: ./backend/services/friends
+      dockerfile: Dockerfile
+    container_name: friends
+    environment:
+      - PORT=5003
+    ports:
+      - "5003:5003"
+    depends_on:
+      - friends-db
+      - kafka
+    volumes:
+      - ./backend/services/friends:/go/src/github.com/iamyxsh/go-grpc-chat-app/backend/services/friends
+      - ./backend/packages/kafka:/go/src/github.com/iamyxsh/go-grpc-chat-app/backend/packages/kafka
+      - ./backend/packages/db:/go/src/github.com/iamyxsh/go-grpc-chat-app/backend/packages/db
+      - ./backend/packages/models:/go/src/github.com/iamyxsh/go-grpc-chat-app/backend/packages/models
+      - ./backend/packages/logger:/go/src/github.com/iamyxsh/go-grpc-chat-app/backend/packages/logger
+      - ./backend/packages/utils:/go/src/github.com/iamyxsh/go-grpc-chat-app/backend/packages/utils
+  friends-db:
+    image: postgres:14.1-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    container_name: friends-db
+    ports:
+      - "5434:5432"
+    volumes:
+      - ./volumes/friends-db:/var/lib/postgresql/data
+
+  chat:
+    build:
+      context: ./backend/services/chat
+      dockerfile: Dockerfile
+    container_name: chat
+    ports:
+      - "5004:5004"
+    volumes:
+      - ./backend/services/chat:/go/src/github.com/iamyxsh/go-grpc-chat-app/backend/services/chat
+      - ./backend/packages/kafka:/go/src/github.com/iamyxsh/go-grpc-chat-app/backend/packages/kafka
+      - ./backend/packages/db:/go/src/github.com/iamyxsh/go-grpc-chat-app/backend/packages/db
+      - ./backend/packages/models:/go/src/github.com/iamyxsh/go-grpc-chat-app/backend/packages/models
+      - ./backend/packages/logger:/go/src/github.com/iamyxsh/go-grpc-chat-app/backend/packages/logger
+      - ./backend/packages/utils:/go/src/github.com/iamyxsh/go-grpc-chat-app/backend/packages/utils
+    environment:
+      - CASSANDRA_PORT=9042
+      - CASSANDRA_HOST=chat-db
+      - PORT=5004
+  chat-db:
+    image: cassandra:4.0
+    container_name: chat-db
+    ports:
+      - 9042:9042
+    volumes:
+      - ./volumes/chat-db:/var/lib/postgresql/data
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    container_name: zookeeper
+    ports:
+      - "22181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - "29092:29092"
+      - "9092:9092"
+    container_name: kafka
+    restart: always
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1

@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package userpb;
+
+
+option go_package = "/pb";
+
+message GetProfileRequest {
+  uint32 id = 1;
+}
+
+message EditProfileRequest {
+  string name = 1;
+  uint32 id = 2;
+}
+
+
+message Response {
+  string msg = 1;
+}
+
+message GetProfileResponse {
+  string email = 1;
+  string name = 2;
+  uint32 id= 3;
+}
+
+service ProfileService {
+  rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
+  rpc EditProfile(EditProfileRequest) returns (Response);
+};

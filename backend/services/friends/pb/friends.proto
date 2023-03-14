@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package friendspb;
+
+
+option go_package = "/pb";
+
+
+message GetAllFriendRequestsRequest {
+  uint32 user = 1;
+}
+
+message Response {
+  string msg = 1;
+}
+
+message User {
+  uint32 id = 1;
+  string name = 2;
+}
+
+message FriendRequests {
+  uint32 id = 1;
+  User from = 2;
+  User to = 3;
+  string time = 4;
+}
+
+
+message AddFriendRequest {
+  uint32 to = 1;
+  uint32 from = 2; 
+}
+
+message AcceptFriendRequest {
+  uint32 id = 1;
+}
+
+message RejectFriendRequest {
+  uint32 id = 1;
+}
+
+message GetAllFriendsRequest {
+  uint32 user = 1;
+}
+
+
+message GetAllFriendRequestsResponse {
+  repeated FriendRequests requests = 1;
+}
+
+message GetAllFriendsResponse {
+  repeated User friends = 1;
+}
+
+
+service FriendsService {
+  rpc AddFriend(AddFriendRequest) returns (Response);
+  rpc AcceptFriend(AcceptFriendRequest) returns (Response);
+  rpc RejectFriend(RejectFriendRequest) returns (Response);
+  rpc GetAllFriendRequests(GetAllFriendRequestsRequest) returns (GetAllFriendRequestsResponse);
+  rpc GetAllFriends(GetAllFriendsRequest) returns (GetAllFriendsResponse);
+};
